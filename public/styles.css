@@ -1,0 +1,35 @@
+/* correção para centralizar botão do google */
+.g-signin2 {
+    width: 100%;
+}
+
+.g-signin2 > div {
+    margin: 0 auto;
+}
+
+body {
+    font-size: 1.25rem;
+    background-color: #f8f9fa;
+}
+
+.form-label {
+    font-weight: 600;
+}
+
+.card {
+    border-radius: 1rem;
+}
+
+.btns-painel {
+    font-size: 1.25rem;
+    padding: 0.75rem;
+}
+
+input.form-control {
+    font-size: 1.25rem;
+    padding: 0.75rem;
+}
+
+#mensagem {
+    font-size: 1.1rem;
+}
