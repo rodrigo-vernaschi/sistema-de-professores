@@ -33,3 +33,14 @@ input.form-control {
 #mensagem {
     font-size: 1.1rem;
 }
+
+.destaque {
+    background-color: #d4edda;
+    transition: background-color 1s ease;
+}
+
+/* Efeito de hover nas linhas da tabela */
+#tabela-alunos tr:hover {
+    background-color: #f1f1f1; /* Cor clara quando passar o mouse */
+    cursor: pointer; /* Indica que é clicável */
+}

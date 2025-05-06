@@ -1,3 +1,5 @@
+// modal.js
+
 function createConfirmationModal(message, onConfirm) {
     // HTML do modal
     const modalHTML = `
@@ -35,9 +37,12 @@ function createConfirmationModal(message, onConfirm) {
 
 // Função para fechar o modal
 function closeModal() {
-    const modal = bootstrap.Modal.getInstance(document.getElementById("modalConfirmacao"))
-    modal.hide()
-    document.getElementById("modalConfirmacao").remove() // Remove o modal da página após fechado
+    const modalElement = document.getElementById("modalConfirmacao")
+    if (modalElement) {
+        const modal = bootstrap.Modal.getInstance(modalElement)
+        modal.hide()
+        modalElement.remove() // Remove o modal da página após fechado
+    }
 }
 
 export { createConfirmationModal }
