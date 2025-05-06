@@ -103,7 +103,10 @@ app.post("/novo-professor", async (req, res) => {
         return res.status(200).json({ success: true, message: "Email cadastrado com sucesso." })
     } catch (error) {
         console.error("Erro ao cadastrar email:", error)
-        return res.status(500).json({ success: false, message: "Erro interno ao cadastrar o email." })
+        return res.status(500).json({
+            success: false,
+            message: "Erro interno ao cadastrar o email.",
+        })
     }
 })
 
@@ -114,7 +117,10 @@ app.get("/emails-autorizados", async (req, res) => {
         return res.status(200).json(emails)
     } catch (error) {
         console.log("Erro ao buscar emails: ", error)
-        return res.status(500).json({ success: false, message: "Erro ao buscar emails cadastrados." })
+        return res.status(500).json({
+            success: false,
+            message: "Erro ao buscar emails cadastrados.",
+        })
     }
 })
 
@@ -141,7 +147,10 @@ app.post("/cadastro-aluno", async (req, res) => {
     const { email, nome, nascimento, instrumentos } = req.body
 
     if (!email || !nome || !nascimento || !instrumentos || instrumentos.length === 0) {
-        return res.status(400).json({ success: false, message: "Preencha todos os campos obrigatórios." })
+        return res.status(400).json({
+            success: false,
+            message: "Preencha todos os campos obrigatórios.",
+        })
     }
 
     try {
@@ -150,13 +159,22 @@ app.post("/cadastro-aluno", async (req, res) => {
             return res.status(400).json({ success: false, message: "Este aluno já está cadastrado." })
         }
 
-        const novoAluno = new Aluno({ email, nome, nascimento, instrumentos })
+        const novoAluno = new Aluno({
+            email,
+            nome,
+            dataNascimento: nascimento, // Mapeia o valor recebido para o campo correto
+            instrumentos,
+        })
+
         await novoAluno.save()
 
         return res.status(201).json({ success: true })
     } catch (erro) {
         console.error("Erro ao cadastrar aluno:", erro)
-        return res.status(500).json({ success: false, message: "Erro interno ao cadastrar o aluno." })
+        return res.status(500).json({
+            success: false,
+            message: "Erro interno ao cadastrar o aluno.",
+        })
     }
 })
 
@@ -179,12 +197,40 @@ app.get("/api/alunos/recentes", async (req, res) => {
     }
 })
 
+app.get("/api/alunos/search", async (req, res) => {
+    const { nome, page = 1, limit = 10 } = req.query
+    const nomeMaiusculo = nome.toUpperCase()
+
+    try {
+        // Usei um índice para otimizar a busca por nome
+        const alunos = await Aluno.find({
+            nome: { $regex: nomeMaiusculo, $options: "i" },
+        })
+            .sort({ createdAt: -1 }) // Ordena do mais recente para o mais antigo
+            .skip((page - 1) * limit)
+            .limit(Number(limit))
+
+        const totalAlunos = await Aluno.countDocuments({
+            nome: { $regex: nomeMaiusculo, $options: "i" },
+        })
+
+        res.json({
+            alunos,
+            totalAlunos,
+        })
+    } catch (error) {
+        console.error("Erro ao buscar alunos por nome:", error)
+        res.status(500).json({ erro: "Erro ao buscar alunos" })
+    }
+})
+
 // Rota para buscar alunos paginados
 app.get("/api/alunos", async (req, res) => {
     const { page = 1, limit = 10 } = req.query
 
     try {
         const alunos = await Aluno.find()
+            .sort({ createdAt: -1 }) // Ordena do mais recente para o mais antigo
             .skip((page - 1) * limit) // Pular os alunos já exibidos nas páginas anteriores
             .limit(Number(limit)) // Limitar a quantidade de alunos por página
 

@@ -1,4 +1,4 @@
-/* correção para centralizar botão do google */
+/* Corrige o botão de login do Google para ocupar toda a largura disponível */
 .g-signin2 {
     width: 100%;
 }
@@ -7,40 +7,81 @@
     margin: 0 auto;
 }
 
+/* Define estilo global da página */
 body {
     font-size: 1.25rem;
     background-color: #f8f9fa;
 }
 
+/* Estiliza os rótulos dos formulários */
 .form-label {
     font-weight: 600;
 }
 
+/* Estilo dos cartões (card) */
 .card {
     border-radius: 1rem;
 }
 
+/* Estilo dos botões principais nos painéis */
 .btns-painel {
     font-size: 1.25rem;
     padding: 0.75rem;
 }
 
+/* Estilo dos campos de entrada */
 input.form-control {
     font-size: 1.25rem;
     padding: 0.75rem;
 }
 
+/* Estilo da mensagem de feedback ao usuário */
 #mensagem {
     font-size: 1.1rem;
 }
 
-.destaque {
+/* Destaca linhas recém adicionadas com cor de fundo verde suave */
+.destaque td {
     background-color: #d4edda;
     transition: background-color 1s ease;
 }
 
-/* Efeito de hover nas linhas da tabela */
-#tabela-alunos tr:hover {
-    background-color: #f1f1f1; /* Cor clara quando passar o mouse */
-    cursor: pointer; /* Indica que é clicável */
+/* Aplica efeito de hover nas linhas da tabela */
+#tabela-alunos tr:hover,
+#tabela-ultimos-alunos tr:hover,
+#tabelaEmails tr:hover {
+    background-color: #f1f1f1;
+    cursor: pointer;
+}
+
+/* Tabelas responsivas apenas com "Nome" e "Ações" */
+@media (max-width: 768px) {
+    /* Oculta o cabeçalho em telas pequenas */
+    table thead tr {
+        display: none;
+    }
+
+    /* Oculta todas as colunas, exceto a primeira (Nome) e a última (Ações) */
+    table tbody td:not(:first-child):not(:last-child) {
+        display: none;
+    }
+
+    /* Faz as células visíveis se comportarem como blocos */
+    table tbody td {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #ddd;
+    }
+
+    /* Nome em negrito */
+    table tbody td:first-child {
+        font-weight: bold;
+    }
+
+    /* Ações centralizadas */
+    table tbody td:last-child {
+        text-align: center;
+    }
 }
