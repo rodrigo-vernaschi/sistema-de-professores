@@ -1,3 +1,5 @@
+import { createConfirmationModal } from "./modal.js"
+
 // Variáveis globais de paginação
 let currentPage = 1 // Página atual, utilizada para controlar a paginação dos resultados.
 const limit = 10 // Limite de alunos por página, define quantos alunos são exibidos por vez.
@@ -22,62 +24,6 @@ function formatarData(dataISOString) {
         return "Data inválida" // Retorna esta string em caso de erro na formatação.
     }
 }
-
-// // Função para carregar a tabela de emails
-// async function carregarTabelaEmails() {
-//     try {
-//         const res = await fetch("/emails-autorizados") // Faz uma requisição GET para obter a lista de emails autorizados.
-//         const emails = await res.json() // Converte a resposta para JSON.
-
-//         const tabela = document.getElementById("tabelaEmails") // Obtém o elemento da tabela de emails no HTML.
-//         const semEmails = document.getElementById("semEmails") // Obtém o elemento de mensagem para quando não há emails.
-
-//         tabela.innerHTML = "" // Limpa o conteúdo da tabela.
-
-//         if (emails.length === 0) {
-//             semEmails.style.display = "block" // Exibe a mensagem de que não há emails.
-//         } else {
-//             semEmails.style.display = "none" // Oculta a mensagem.
-//             emails.forEach((emailObj) => {
-//                 const { _id, email } = emailObj // Desestrutura o objeto email para obter id e email.
-
-//                 const linha = document.createElement("tr") // Cria uma nova linha na tabela.
-//                 linha.innerHTML = `
-//                         <td>${email}</td>
-//                         <td style="text-align: right;">
-//                             <button class="btn btn-sm btn-danger" data-id="${_id}" data-email="${email}">Excluir</button>
-//                         </td>
-//                     ` // Define o conteúdo da linha com o email e o botão de excluir.
-
-//                 // Adiciona evento ao botão de exclusão
-//                 linha.querySelector("button").addEventListener("click", async (event) => {
-//                     const id = event.target.getAttribute("data-id") // Obtém o id do email a ser excluído.
-//                     const email = event.target.getAttribute("data-email") // Obtém o email a ser excluído.
-
-//                     createConfirmationModal(
-//                         // Exibe o modal de confirmação (assumindo que createConfirmationModal está definido globalmente ou importado).
-//                         `Você tem certeza que deseja excluir o email: ${email}?`,
-//                         async () => {
-//                             const { success, message } = await enviarRequisicao(`/email/${id}`, "DELETE") // Envia requisição para deletar o email.
-
-//                             console.log("Resposta da exclusão:", success, message) // Log para verificar a resposta.
-
-//                             exibirMensagem("mensagem", message, success) // Exibe a mensagem de sucesso ou erro (assumindo que exibirMensagem está definido globalmente ou importado).
-
-//                             if (success) {
-//                                 await carregarTabelaEmails() // Atualiza a tabela sem recarregar a página.
-//                             }
-//                         }
-//                     )
-//                 })
-
-//                 tabela.appendChild(linha) // Adiciona a linha à tabela.
-//             })
-//         }
-//     } catch (err) {
-//         console.log("Erro ao carregar emails: ", err) // Registra erros no console.
-//     }
-// }
 
 /**
  * Carrega os alunos do servidor, aplicando paginação.
@@ -125,10 +71,72 @@ function exibirAlunos(alunos) {
                 </td>
                 <td style="text-align: center;">
                     <button class="btn btn-info btn-sm">Detalhes</button>
-                    <button class="btn btn-danger btn-sm">Excluir</button>
+                    <button class="btn btn-danger btn-sm btn-excluir" data-id="${aluno._id}" data-nome="${aluno.nome}">Excluir</button>
                 </td>
             ` // Preenche a linha com os dados do aluno, mostrando apenas nome e ações.
             tbody.appendChild(linha) // Adiciona a linha preenchida à tabela.
+        })
+
+        // Seleciona todos os botões de exclusão na tabela
+        document.querySelectorAll(".btn-excluir").forEach((btn) => {
+            // Adiciona um listener de evento de clique para cada botão de exclusão
+            btn.addEventListener("click", (event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                // Obtém o ID do aluno a ser excluído do atributo 'data-id' do botão
+                const id = btn.dataset.id
+                // Obtém o nome do aluno para a mensagem de confirmação
+                const nome = btn.dataset.nome
+
+                // Chama a função para criar um modal de confirmação antes de excluir
+                createConfirmationModal(`Deseja realmente excluir o aluno <strong>${nome}</strong>?`, async () => {
+                    try {
+                        // Faz uma requisição DELETE para a rota da API do aluno específico
+                        const resp = await fetch(`/api/alunos/${id}`, {
+                            method: "DELETE",
+                        })
+
+                        // Verifica se a resposta da API foi bem-sucedida
+                        if (!resp.ok) {
+                            let errorMsg = `Erro ${resp.status} ao tentar excluir.`
+                            try {
+                                // Tenta parsear a resposta JSON para obter uma mensagem de erro mais detalhada
+                                const errorData = await resp.json()
+                                errorMsg = errorData.message || errorMsg
+                            } catch (e) {
+                                // Ignora erros ao tentar parsear JSON de erro
+                            }
+                            console.error("Erro API:", errorMsg)
+                            alert(errorMsg)
+                            return
+                        }
+
+                        let result = { success: true }
+                        try {
+                            // Tenta parsear a resposta JSON para verificar o resultado da exclusão
+                            const text = await resp.text()
+                            if (text) {
+                                result = JSON.parse(text)
+                            }
+                        } catch (e) {
+                            console.warn("Não foi possível parsear JSON da resposta DELETE:", e)
+                        }
+
+                        // Se a exclusão foi bem-sucedida na API
+                        if (result.success) {
+                            console.log("Aluno excluído com sucesso, atualizando lista...")
+                            carregarAlunos() // Recarrega a lista de alunos atualizada
+                        } else {
+                            const message = result.message || "A API indicou um erro ao excluir."
+                            console.error("Erro Lógico API:", message)
+                            alert(message)
+                        }
+                    } catch (err) {
+                        console.error("Erro durante a exclusão (fetch/script):", err)
+                        alert("Ocorreu um erro de rede ou script ao tentar excluir o aluno.")
+                    }
+                })
+            })
         })
     }
 }

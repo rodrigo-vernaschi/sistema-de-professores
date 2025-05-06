@@ -20,7 +20,7 @@ function createNavbar(userInfo) {
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid">
                 <!-- Lado esquerdo: Foto e nome do professor -->
-                <a class="navbar-brand d-flex align-items-center" href="http://localhost:3000/painel.html">
+                <a class="navbar-brand d-flex align-items-center" href="painel.html">
                     <img id="user-photo" src="${userInfo.photo}" alt="Foto do Professor" class="rounded-circle" width="40" height="40" />
                     <span id="user-name" class="ms-2">${userInfo.name}</span>
                 </a>
