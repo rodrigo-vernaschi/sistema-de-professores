@@ -1,0 +1,25 @@
+estrutura do projeto
+
+src
+--server.js
+--models
+---Aluno.js
+---Autorizado.js
+---Professor.js
+
+public
+--cadastro-aluno.html
+--cadastro-professor
+--index.html
+--painel.html
+--styles.css
+--modules
+---auth.js
+---cadastro-alunos.js
+---cadastro-professores.js
+---login.js
+---modal.js
+---navbar.js
+---painel.js
+---tabela.js
+---utils.js

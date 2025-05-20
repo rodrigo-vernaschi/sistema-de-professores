@@ -7,6 +7,24 @@ const { OAuth2Client } = require("google-auth-library")
 const Aluno = require("./models/Aluno")
 const Professor = require("./models/Professor")
 const Autorizado = require("./models/Autorizado")
+const fs = require("fs")
+const sharp = require("sharp")
+const multer = require("multer")
+
+sharp.cache(false)
+
+// Configuração do armazenamento de imagens
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, path.join(__dirname, "../public/uploads/"))
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9)
+        cb(null, uniqueSuffix + "-" + file.originalname)
+    },
+})
+
+const upload = multer({ storage })
 
 dotenv.config()
 
@@ -135,7 +153,18 @@ app.delete("/api/alunos/:id", async (req, res) => {
             return res.status(404).json({ success: false, message: "Aluno não encontrado." })
         }
 
-        return res.status(200).json({ success: true, message: "Aluno excluído com sucesso." })
+        // Apagar a imagem do aluno, se existir
+        if (alunoDeletado.fotoPerfil) {
+            const caminhoCompleto = path.join(__dirname, "../public", alunoDeletado.fotoPerfil)
+            if (fs.existsSync(caminhoCompleto)) {
+                fs.unlinkSync(caminhoCompleto)
+                console.log("Imagem excluída:", alunoDeletado.fotoPerfil)
+            } else {
+                console.warn("Imagem não encontrada para excluir:", alunoDeletado.fotoPerfil)
+            }
+        }
+
+        return res.status(200).json({ success: true, message: "Aluno e imagem excluídos com sucesso." })
     } catch (error) {
         console.error("Erro ao excluir aluno:", error)
         return res.status(500).json({ success: false, message: "Erro ao excluir aluno." })
@@ -143,27 +172,42 @@ app.delete("/api/alunos/:id", async (req, res) => {
 })
 
 // Rota para cadastro de alunos
-app.post("/cadastro-aluno", async (req, res) => {
-    const { email, nome, nascimento, instrumentos } = req.body
+app.post("/cadastro-aluno", upload.single("foto"), async (req, res) => {
+    const { email, nome, nascimento } = req.body
+    const instrumentos = req.body.instrumentos
 
-    if (!email || !nome || !nascimento || !instrumentos || instrumentos.length === 0) {
+    if (!email || !nome || !nascimento || !instrumentos || !req.file) {
         return res.status(400).json({
             success: false,
-            message: "Preencha todos os campos obrigatórios.",
+            message: "Preencha todos os campos obrigatórios e envie uma foto.",
         })
     }
 
     try {
         const alunoExistente = await Aluno.findOne({ email })
         if (alunoExistente) {
+            fs.unlinkSync(req.file.path)
             return res.status(400).json({ success: false, message: "Este aluno já está cadastrado." })
         }
+
+        const novoNome = `perfil-${Date.now()}.webp`
+        const caminhoFinal = path.join(__dirname, "../public/uploads", novoNome)
+
+        // Redimensiona proporcionalmente para largura ou altura máx. de 150px
+        await sharp(req.file.path)
+            .resize({ width: 150, height: 150, fit: "inside" }) // mantém proporção, máximo 150x150
+            .webp({ quality: 70 }) // converte e comprime para .webp
+            .toFile(caminhoFinal)
+
+        // Remove a imagem original não comprimida
+        fs.unlinkSync(req.file.path)
 
         const novoAluno = new Aluno({
             email,
             nome,
-            dataNascimento: nascimento, // Mapeia o valor recebido para o campo correto
-            instrumentos,
+            dataNascimento: nascimento,
+            instrumentos: Array.isArray(instrumentos) ? instrumentos : [instrumentos],
+            fotoPerfil: "/uploads/" + novoNome,
         })
 
         await novoAluno.save()
@@ -171,10 +215,15 @@ app.post("/cadastro-aluno", async (req, res) => {
         return res.status(201).json({ success: true })
     } catch (erro) {
         console.error("Erro ao cadastrar aluno:", erro)
-        return res.status(500).json({
-            success: false,
-            message: "Erro interno ao cadastrar o aluno.",
-        })
+        if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
+        try {
+            return res.status(500).json({
+                success: false,
+                message: "Erro interno ao cadastrar o aluno.",
+            })
+        } catch (e) {
+            res.status(500).send("Erro interno")
+        }
     }
 })
 
@@ -243,6 +292,18 @@ app.get("/api/alunos", async (req, res) => {
     } catch (err) {
         console.error("Erro ao buscar alunos:", err)
         res.status(500).json({ erro: "Erro ao buscar alunos" })
+    }
+})
+
+app.get("/api/alunos/:id", async (req, res) => {
+    try {
+        const aluno = await Aluno.findById(req.params.id)
+        if (!aluno) return res.status(404).json({ message: "Aluno não encontrado" })
+
+        res.json(aluno)
+    } catch (err) {
+        console.error("Erro ao buscar aluno por ID:", err)
+        res.status(500).json({ message: "Erro interno ao buscar aluno" })
     }
 })
 

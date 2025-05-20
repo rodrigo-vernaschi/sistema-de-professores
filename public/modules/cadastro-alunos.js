@@ -131,67 +131,53 @@ async function carregarUltimosAlunos() {
         console.error("Erro ao carregar os últimos alunos:", error)
     }
 }
-
-// Adiciona um listener de evento para quando o DOM estiver completamente carregado
 document.addEventListener("DOMContentLoaded", carregarUltimosAlunos)
 
-// Seleciona o formulário de cadastro de alunos
 const formCadastroAluno = document.querySelector("#form-cadastro-aluno")
-// Adiciona um listener de evento de submit para o formulário
-formCadastroAluno.addEventListener("submit", async (event) => {
-    event.preventDefault() // Impede o comportamento padrão de submit do formulário
 
-    // Obtém os valores dos campos do formulário
-    const emailInput = document.getElementById("email")
-    const nomeInput = document.getElementById("nome")
-    const nascimentoInput = document.getElementById("nascimento")
-    const instrumentosCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked')
+formCadastroAluno.addEventListener("submit", async (event) => {
+    event.preventDefault()
+
+    const email = document.getElementById("email").value
+    const nome = document.getElementById("nome").value
+    const nascimento = document.getElementById("nascimento").value
+    const instrumentos = Array.from(document.querySelectorAll('input[name="instrumentos"]:checked')).map((cb) => cb.value)
+    const foto = document.getElementById("foto").files[0]
     const mensagemDiv = document.getElementById("mensagem")
 
-    const email = emailInput.value
-    const nome = nomeInput.value
-    const nascimento = nascimentoInput.value
-    const instrumentos = Array.from(instrumentosCheckboxes).map((checkbox) => checkbox.value)
-
-    // Validação básica dos campos obrigatórios
-    if (!email || !nome || !nascimento || instrumentos.length === 0) {
+    if (!email || !nome || !nascimento || instrumentos.length === 0 || !foto) {
         mensagemDiv.className = "mt-3 text-center text-danger"
-        mensagemDiv.textContent = "Preencha todos os campos obrigatórios."
+        mensagemDiv.textContent = "Preencha todos os campos obrigatórios e envie uma foto."
         return
     }
 
+    const formData = new FormData()
+    formData.append("email", email)
+    formData.append("nome", nome)
+    formData.append("nascimento", nascimento)
+    instrumentos.forEach((instr) => formData.append("instrumentos", instr))
+    formData.append("foto", foto)
+
     try {
-        // Faz uma requisição POST para a rota '/cadastro-aluno' para cadastrar o novo aluno
         const response = await fetch("/cadastro-aluno", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json", // Indica que o corpo da requisição é JSON
-            },
-            body: JSON.stringify({ email, nome, nascimento, instrumentos }), // Converte os dados do formulário para JSON
+            body: formData,
         })
 
-        // Converte a resposta da API para um objeto JSON
         const data = await response.json()
 
-        // Se a resposta da API indicar sucesso no cadastro
         if (response.ok && data.success) {
             mensagemDiv.className = "mt-3 text-center text-success"
             mensagemDiv.textContent = "Aluno cadastrado com sucesso!"
-            formCadastroAluno.reset() // Limpa o formulário
-            // Recarrega a lista de alunos e, após a conclusão, destaca o primeiro aluno da tabela
-            carregarUltimosAlunos().then(() => {
-                const tabelaBody = document.querySelector("#tabela-ultimos-alunos tbody")
-                if (tabelaBody && tabelaBody.firstElementChild) {
-                    destacarNovoAluno(tabelaBody.firstElementChild.id)
-                }
-            })
+            formCadastroAluno.reset()
+            carregarUltimosAlunos()
         } else {
             mensagemDiv.className = "mt-3 text-center text-danger"
             mensagemDiv.textContent = data.message || "Erro ao cadastrar o aluno."
         }
     } catch (error) {
-        console.error("Erro ao enviar dados do formulário:", error)
+        console.error("Erro ao enviar dados:", error)
         mensagemDiv.className = "mt-3 text-center text-danger"
-        mensagemDiv.textContent = "Ocorreu um erro ao enviar os dados."
+        mensagemDiv.textContent = "Erro ao enviar dados do formulário."
     }
 })
