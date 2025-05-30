@@ -173,10 +173,10 @@ app.delete("/api/alunos/:id", async (req, res) => {
 
 // Rota para cadastro de alunos
 app.post("/cadastro-aluno", upload.single("foto"), async (req, res) => {
-    const { email, nome, nascimento } = req.body
+    const { nome } = req.body
     const instrumentos = req.body.instrumentos
 
-    if (!email || !nome || !nascimento || !instrumentos || !req.file) {
+    if (!nome || !instrumentos || !req.file) {
         return res.status(400).json({
             success: false,
             message: "Preencha todos os campos obrigatórios e envie uma foto.",
@@ -184,12 +184,6 @@ app.post("/cadastro-aluno", upload.single("foto"), async (req, res) => {
     }
 
     try {
-        const alunoExistente = await Aluno.findOne({ email })
-        if (alunoExistente) {
-            fs.unlinkSync(req.file.path)
-            return res.status(400).json({ success: false, message: "Este aluno já está cadastrado." })
-        }
-
         const novoNome = `perfil-${Date.now()}.webp`
         const caminhoFinal = path.join(__dirname, "../public/uploads", novoNome)
 
@@ -203,19 +197,17 @@ app.post("/cadastro-aluno", upload.single("foto"), async (req, res) => {
         fs.unlinkSync(req.file.path)
 
         const novoAluno = new Aluno({
-            email,
             nome,
-            dataNascimento: nascimento,
             instrumentos: Array.isArray(instrumentos) ? instrumentos : [instrumentos],
             fotoPerfil: "/uploads/" + novoNome,
         })
 
         await novoAluno.save()
-
         return res.status(201).json({ success: true })
     } catch (erro) {
         console.error("Erro ao cadastrar aluno:", erro)
         if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path)
+
         try {
             return res.status(500).json({
                 success: false,

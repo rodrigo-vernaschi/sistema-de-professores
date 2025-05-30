@@ -1,0 +1,11 @@
+storage:
+    dbPath: "C:\\data\\db"
+    wiredTiger:
+        engineConfig:
+            configString: log=(prealloc=false)
+systemLog:
+    destination: file
+    path: "C:\\data\\mongod.log"
+net:
+    bindIp: 127.0.0.1
+    port: 27017

@@ -19,17 +19,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const aluno = await res.json()
 
         document.getElementById("nome-aluno").textContent = aluno.nome
-        document.getElementById("email-aluno").textContent = aluno.email
         document.getElementById("foto-perfil").src = aluno.fotoPerfil || "https://via.placeholder.com/150"
         document.getElementById("instrumentos-aluno").textContent = (aluno.instrumentos || []).join(", ")
-
-        if (aluno.dataNascimento) {
-            const data = new Date(aluno.dataNascimento)
-            const formatada = data.toLocaleDateString("pt-BR")
-            document.getElementById("nascimento-aluno").textContent = formatada
-        } else {
-            document.getElementById("nascimento-aluno").textContent = "Não informada"
-        }
     } catch (err) {
         console.error(err)
         alert("Erro ao carregar perfil.")
